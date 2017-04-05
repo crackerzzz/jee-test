@@ -23,11 +23,11 @@ public class GenericsParentChild {
 
 }
 
-abstract class BaseJournal<P extends BaseJournal<P, JL>, JL extends BaseJournalLine<JL, P>> {
+abstract class BaseJournal<J extends BaseJournal<J, JL>, JL extends BaseJournalLine<JL, J>> {
 	private String type;
 	private Date accountingPeriod;
 	private List<JL> lines = new ArrayList<>();
-	private P accrualJournal;
+	private J accrualJournal;
 
 	public BaseJournal(String type, Date accountingPeriod) {
 		this.type = type;
@@ -61,26 +61,28 @@ abstract class BaseJournal<P extends BaseJournal<P, JL>, JL extends BaseJournalL
 	public void linkLines(List<JL> lines) {
 		this.lines = lines;
 		for (JL line : lines) {
-			line.setJournal(this);
+			line.setJournal(getSelf());
 		}
 	}
+
+	protected abstract J getSelf();
 
 	public void setLines(List<JL> lines) {
 		this.lines = lines;
 	}
 
-	public P getAccrualJournal() {
+	public J getAccrualJournal() {
 		return accrualJournal;
 	}
 
-	public void setAccrualJournal(P accrualJournal) {
+	public void setAccrualJournal(J accrualJournal) {
 		this.accrualJournal = accrualJournal;
 	}
 }
 
-abstract class BaseJournalLine<P extends BaseJournalLine<P, J>, J extends BaseJournal<J, P>> {
+abstract class BaseJournalLine<JL extends BaseJournalLine<JL, J>, J extends BaseJournal<J, JL>> {
 	private Date accountingPeriod;
-	private BaseJournal<?, ?> journal;
+	private J journal;
 
 	public Date getAccountingPeriod() {
 		return accountingPeriod;
@@ -90,18 +92,23 @@ abstract class BaseJournalLine<P extends BaseJournalLine<P, J>, J extends BaseJo
 		this.accountingPeriod = accountingPeriod;
 	}
 
-	public BaseJournal<?, ?> getJournal() {
+	public J getJournal() {
 		return journal;
 	}
 
-	public void setJournal(BaseJournal<?, ?> journal) {
-		this.journal = journal;
+	public void setJournal(J baseJournal) {
+		this.journal = baseJournal;
 	}
 }
 
 class MonthlyJournal extends BaseJournal<MonthlyJournal, MonthlyJournalLine> {
 	public MonthlyJournal(String type, Date accountingPeriod) {
 		super(type, accountingPeriod);
+	}
+
+	@Override
+	protected MonthlyJournal getSelf() {
+		return this;
 	}
 }
 
@@ -115,6 +122,11 @@ class DailyJournal extends BaseJournal<DailyJournal, DailyJournalLine> {
 	public DailyJournal(String type, Date accountingPeriod, Date transactionDate) {
 		super(type, accountingPeriod);
 		this.transactionDate = transactionDate;
+	}
+
+	@Override
+	protected DailyJournal getSelf() {
+		return this;
 	}
 
 	public Date getTransactionDate() {
